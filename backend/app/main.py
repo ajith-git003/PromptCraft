@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from app.prompt_engine import generate_systematic_prompt, PromptAnalysis
 
-app = FastAPI(title="PromptCraft API")
+app = FastAPI(title="AI Prompt Studio API")
 
 # CORS setup
 app.add_middleware(
@@ -19,7 +19,7 @@ class PromptRequest(BaseModel):
 # Root route (for testing)
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to PromptCraft Backend! 🚀"}
+    return {"message": "Welcome to AI Prompt Studio Backend! 🚀"}
 
 # Generation route
 @app.post("/generate", response_model=PromptAnalysis)

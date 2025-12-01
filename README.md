@@ -1,4 +1,4 @@
-# 🚀 PromptCraft - AI Prompt Analysis & Optimization Platform
+# 🚀 AI Prompt Studio - AI Prompt Analysis & Optimization Platform
 
 A production-ready full-stack application that analyzes and optimizes AI prompts using NLP techniques.
 

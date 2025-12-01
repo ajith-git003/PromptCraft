@@ -19,10 +19,10 @@ export default function Home() {
           </div>
           <h1 className="text-6xl md:text-7xl font-bold mb-6 tracking-tight">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
-              Prompt
+              AI Prompt
             </span>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-neon-blue to-neon-purple">
-              Cowboy
+              Studio
             </span>
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
