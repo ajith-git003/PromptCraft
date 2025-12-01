@@ -24,12 +24,13 @@ class PromptAnalysis(BaseModel):
     suggestions: List[str]
 
 def identify_intent(text: str) -> str:
-    """Identify the intent of the prompt (coding, image, writing, general)."""
+    """Identify the intent of the prompt (coding, image, writing, marketing, general)."""
     doc = nlp(text.lower())
     
     coding_keywords = {"code", "python", "script", "function", "api", "app", "html", "css", "react", "bug", "error", "debug", "calculator"}
     image_keywords = {"image", "photo", "picture", "logo", "design", "draw", "illustration", "sketch", "art", "4k", "realistic"}
     writing_keywords = {"write", "story", "essay", "article", "blog", "email", "letter", "poem", "summary", "rewrite"}
+    marketing_keywords = {"marketing", "brand", "audience", "strategy", "sell", "product", "market", "customer", "demographic", "campaign", "ad", "social media"}
     
     tokens = {token.lemma_ for token in doc}
     
@@ -39,6 +40,8 @@ def identify_intent(text: str) -> str:
         return "image"
     if tokens & writing_keywords:
         return "writing"
+    if tokens & marketing_keywords:
+        return "marketing"
     return "general"
 
 def generate_coding_stok(original: str) -> StructuredPrompt:
@@ -92,21 +95,37 @@ def generate_writing_stok(original: str) -> StructuredPrompt:
 -   Tailor the vocabulary to the intended audience"""
     )
 
+def generate_marketing_stok(original: str) -> StructuredPrompt:
+    return StructuredPrompt(
+        situation=f"You are developing a marketing strategy for '{original}' and need to identify and define the target audience segments that would be most receptive to your product.",
+        task=f"""Identify and describe 4-5 distinct audience segments for '{original}', including:
+-   Demographics (age, location, income)
+-   Psychographics (interests, values, lifestyle)
+-   Purchasing behaviors and key drivers
+-   Primary motivations for engaging with the brand""",
+        objective="Create a clear audience profile that will guide marketing messaging, channel selection, and product positioning to maximize market reach and brand resonance.",
+        knowledge="""-   Consider audiences ranging from budget-conscious to premium consumers
+-   Analyze both B2B and B2C segments if applicable
+-   Focus on pain points and how the product solves them
+-   Look for underserved niches in the current market
+-   Consider the customer journey from awareness to loyalty"""
+    )
+
 def generate_general_stok(original: str) -> StructuredPrompt:
     return StructuredPrompt(
-        situation=f"You need a clear and accurate answer or solution for '{original}' that addresses the core of the user's request.",
-        task=f"""Address the user's request: '{original}' by providing:
--   A direct and concise answer
--   Step-by-step instructions (if applicable)
--   Relevant context or background information
--   Examples or illustrations to clarify points
--   Verification of facts and assumptions""",
-        objective="Provide a clear, step-by-step response that fully answers the user's question without ambiguity and provides actionable value.",
-        knowledge="""-   Draw upon general knowledge and verified facts
--   Avoid speculation or hallucination
--   Break down complex topics into digestible parts
--   Use formatting (bolding, lists) for readability
--   Anticipate follow-up questions"""
+        situation=f"You need a comprehensive and well-researched answer for '{original}' that provides deep insight and actionable information.",
+        task=f"""Analyze the request '{original}' and provide a detailed response that includes:
+-   A direct and clear answer to the core question
+-   Key concepts and definitions relevant to the topic
+-   Step-by-step explanations or logical arguments
+-   Real-world examples or case studies to illustrate points
+-   Potential challenges or alternative perspectives""",
+        objective="Deliver a high-quality, authoritative response that fully addresses the user's needs, clears up any confusion, and provides value beyond a simple answer.",
+        knowledge="""-   Synthesize information from reliable sources
+-   Break down complex ideas into simple, understandable terms
+-   Use analogies to explain abstract concepts
+-   Structure the response with clear headings and bullet points
+-   Anticipate the 'why' and 'how' behind the user's query"""
     )
 
 def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
@@ -122,6 +141,9 @@ def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
     elif intent == "writing":
         stok = generate_writing_stok(prompt)
         suggestions = ["Define the target audience", "Specify word count", "Choose a specific tone"]
+    elif intent == "marketing":
+        stok = generate_marketing_stok(prompt)
+        suggestions = ["Define the budget range", "Specify the geographic region", "Identify key competitors"]
     else:
         stok = generate_general_stok(prompt)
         suggestions = ["Be more specific about the goal", "Provide context", "Ask for a specific format"]
