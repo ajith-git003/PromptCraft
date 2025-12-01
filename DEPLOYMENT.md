@@ -130,6 +130,43 @@ docker push <account>.dkr.ecr.us-east-1.amazonaws.com/promptcraft-backend:latest
 
 ---
 
+### Option 5: Google Cloud Platform (GCP) - Cloud Run
+
+#### Why Cloud Run?
+-   **Serverless**: Pay only when code runs
+-   **Scalable**: Scales to zero automatically
+-   **Free Tier**: Generous free tier (2M requests/month)
+
+#### Steps
+
+1.  **Install Google Cloud SDK**
+    -   Download and install `gcloud` CLI.
+    -   Run `gcloud init` to log in.
+
+2.  **Deploy Backend**
+    ```bash
+    cd backend
+    gcloud run deploy promptcraft-backend --source . --region us-central1 --allow-unauthenticated
+    ```
+    -   Note the URL provided (e.g., `https://promptcraft-backend-xyz.a.run.app`).
+
+3.  **Deploy Frontend**
+    -   Update `frontend/.env` with the backend URL.
+    -   Deploy frontend to Cloud Run (requires Dockerfile) OR Firebase Hosting (recommended for static sites).
+    
+    **Using Firebase Hosting (Easier for React):**
+    ```bash
+    cd frontend
+    npm install -g firebase-tools
+    firebase login
+    firebase init
+    # Select "Hosting", "Create new project", "build" as public directory
+    npm run build
+    firebase deploy
+    ```
+
+---
+
 ## 📊 Deployment Comparison
 
 | Platform | Cost | Setup Time | Best For |
