@@ -44,21 +44,63 @@ def identify_intent(text: str) -> str:
         return "marketing"
     return "general"
 
+def extract_key_requirements(prompt: str, intent: str) -> List[str]:
+    """Extract specific requirements from the prompt."""
+    doc = nlp(prompt.lower())
+    requirements = []
+    
+    if intent == "coding":
+        # Look for specific features mentioned
+        if "calculator" in prompt.lower():
+            requirements = [
+                "Support basic operations: +, -, *, /",
+                "Display should show the current input and calculation results",
+                "Handle edge cases such as division by zero, multiple decimal points, and consecutive operators",
+                "The calculator should have a clear button to reset, and the ability to delete the last entered digit",
+                "Ensure the interface is clean and easy to use with clearly labeled buttons for numbers (0-9), operations, equals, clear, and delete functions"
+            ]
+        elif "todo" in prompt.lower() or "task" in prompt.lower():
+            requirements = [
+                "Add, edit, and delete tasks",
+                "Mark tasks as complete/incomplete",
+                "Persist data (localStorage or database)",
+                "Filter tasks by status (all, active, completed)",
+                "Clean UI with intuitive controls"
+            ]
+        elif "api" in prompt.lower():
+            requirements = [
+                "RESTful endpoints with proper HTTP methods",
+                "Input validation and error handling",
+                "JSON response formatting",
+                "Authentication if needed",
+                "API documentation (OpenAPI/Swagger)"
+            ]
+        else:
+            # Generic coding requirements
+            requirements = [
+                "Core functionality implemented efficiently",
+                "User interface (if applicable)",
+                "Error handling for edge cases",
+                "Clear code structure and comments",
+                "Easy to run with minimal setup"
+            ]
+    
+    return requirements
+
 def generate_coding_stok(original: str) -> StructuredPrompt:
+    requirements = extract_key_requirements(original, "coding")
+    requirements_text = "\n".join([f"-   {req}" for req in requirements])
+    
     return StructuredPrompt(
-        situation=f"You need a functional application or script for '{original}' with an intuitive user interface (if applicable) and polished code structure that provides a professional developer experience.",
-        task=f"""The assistant should create complete, production-ready code for '{original}' that includes:
--   Core functionality implemented efficiently
--   A clean, modern structure (or GUI if applicable)
--   Clear display of outputs and results
--   Proper error handling and edge case management
--   Responsive design or robust logic flow""",
-        objective=f"Deliver a fully functional solution for '{original}' that users can run immediately with minimal setup, featuring clean code that makes it easy to understand and modify.",
-        knowledge="""-   The code should support standard operations relevant to the task
--   The implementation should use modern best practices and design principles
--   Variable naming should be clear and consistent
--   The solution should include comments explaining complex logic
--   Dependencies should be clearly listed"""
+        situation=f"You are developing {original.strip()} that users will interact with to achieve specific functionality.",
+        task=f"""Create a fully functional {original.strip()} with a user interface that allows users to interact with it effectively. The application should:
+{requirements_text}""",
+        objective=f"Build {original.strip()} that is intuitive, responsive, and handles common user interactions and edge cases gracefully, providing accurate results.",
+        knowledge=f"""-   Use modern best practices and design patterns
+-   Ensure responsive design that works on different screen sizes
+-   Include proper error messages for invalid inputs
+-   Make the code maintainable with clear variable names and comments
+-   Test edge cases thoroughly before deployment"""
     )
 
 def generate_image_stok(original: str) -> StructuredPrompt:
