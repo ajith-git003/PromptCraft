@@ -27,7 +27,7 @@ def identify_intent(text: str) -> str:
     """Identify the intent of the prompt (coding, image, writing, marketing, general)."""
     doc = nlp(text.lower())
     
-    coding_keywords = {"code", "python", "script", "function", "api", "app", "html", "css", "react", "bug", "error", "debug", "calculator"}
+    coding_keywords = {"code", "python", "script", "function", "api", "app", "html", "css", "react", "bug", "error", "debug", "calculator", "dev"}
     image_keywords = {"image", "photo", "picture", "logo", "design", "draw", "illustration", "sketch", "art", "4k", "realistic"}
     writing_keywords = {"write", "story", "essay", "article", "blog", "email", "letter", "poem", "summary", "rewrite"}
     marketing_keywords = {"marketing", "brand", "audience", "strategy", "sell", "product", "market", "customer", "demographic", "campaign", "ad", "social media"}
@@ -44,130 +44,138 @@ def identify_intent(text: str) -> str:
         return "marketing"
     return "general"
 
-def extract_key_requirements(prompt: str, intent: str) -> List[str]:
-    """Extract specific requirements from the prompt."""
-    doc = nlp(prompt.lower())
-    requirements = []
-    
+def generate_dynamic_suggestions(prompt: str, intent: str) -> List[str]:
+    """Generate smart suggestions based on what is MISSING from the prompt."""
+    prompt_lower = prompt.lower()
+    suggestions = []
+
     if intent == "coding":
-        # Look for specific features mentioned
-        if "calculator" in prompt.lower():
-            requirements = [
-                "Support basic operations: +, -, *, /",
-                "Display should show the current input and calculation results",
-                "Handle edge cases such as division by zero, multiple decimal points, and consecutive operators",
-                "The calculator should have a clear button to reset, and the ability to delete the last entered digit",
-                "Ensure the interface is clean and easy to use with clearly labeled buttons for numbers (0-9), operations, equals, clear, and delete functions"
-            ]
-        elif "todo" in prompt.lower() or "task" in prompt.lower():
-            requirements = [
-                "Add, edit, and delete tasks",
-                "Mark tasks as complete/incomplete",
-                "Persist data (localStorage or database)",
-                "Filter tasks by status (all, active, completed)",
-                "Clean UI with intuitive controls"
-            ]
-        elif "api" in prompt.lower():
-            requirements = [
-                "RESTful endpoints with proper HTTP methods",
-                "Input validation and error handling",
-                "JSON response formatting",
-                "Authentication if needed",
-                "API documentation (OpenAPI/Swagger)"
-            ]
-        else:
-            # Generic coding requirements
-            requirements = [
-                "Core functionality implemented efficiently",
-                "User interface (if applicable)",
-                "Error handling for edge cases",
-                "Clear code structure and comments",
-                "Easy to run with minimal setup"
-            ]
+        # Language Check
+        if not any(lang in prompt_lower for lang in ["python", "javascript", "java", "c++", "html", "css", "sql", "react", "node"]):
+            suggestions.append("Specify the programming language (e.g., Python, JavaScript)")
+        elif "python" in prompt_lower:
+            suggestions.append("Specify target Python version (e.g., 3.9+)")
+            suggestions.append("Mention preferred libraries (e.g., Pandas, Typer)")
+
+        # Application Type Check
+        if "calculator" in prompt_lower:
+            if not any(ui in prompt_lower for ui in ["gui", "cli", "web", "tkinter", "flask", "react"]):
+                suggestions.append("Specify the interface: CLI, GUI (Tkinter/PyQt), or Web?")
+            suggestions.append("Do you need scientific functions (sin/cos/tan)?")
+        
+        # General Coding Checks
+        if "test" not in prompt_lower:
+            suggestions.append("Include requirements for unit tests (pytest/unittest)")
     
-    return requirements
+    elif intent == "image":
+        if "--ar" not in prompt_lower and "aspect ratio" not in prompt_lower:
+            suggestions.append("Specify aspect ratio (e.g., 16:9, 1:1)")
+        if "style" not in prompt_lower:
+            suggestions.append("Define an art style (e.g., Cyberpunk, Oil Painting)")
+
+    elif intent == "marketing":
+        if "budget" not in prompt_lower:
+            suggestions.append("Define the budget range")
+        if "competitor" not in prompt_lower:
+            suggestions.append("Identify key competitors")
+
+    # Fallback if list is too short
+    if len(suggestions) < 2:
+        suggestions.append("Add constraints or limitations")
+    
+    return suggestions[:3] # Return top 3 unique suggestions
+
+def extract_rich_knowledge(prompt: str, intent: str) -> str:
+    """Inject expert knowledge based on specific keywords."""
+    prompt_lower = prompt.lower()
+    knowledge_points = []
+
+    if intent == "coding":
+        # Base coding knowledge
+        knowledge_points.append("Follow Clean Code principles (DRY, SOLID)")
+        
+        if "python" in prompt_lower:
+            knowledge_points.append("Follow PEP 8 style guide for Python code")
+            knowledge_points.append("Use Type Hinting (typing module) for better maintainability")
+            knowledge_points.append("Include comprehensive Docstrings for all functions/classes")
+
+        if "calculator" in prompt_lower:
+            knowledge_points.append("Implement the Shunting-yard algorithm for parsing mathematical expressions")
+            knowledge_points.append("Separate business logic (Calculation) from UI code")
+            knowledge_points.append("Handle floating-point arithmetic precision issues (decimal module)")
+            knowledge_points.append("Support keyboard input binding for better UX")
+            knowledge_points.append("Implement a robust history tracking system with Undo/Redo")
+
+        if "api" in prompt_lower:
+            knowledge_points.append("Use proper HTTP Status Codes (200, 201, 400, 500)")
+            knowledge_points.append("Implement Rate Limiting and Authentication (JWT/OAuth)")
+    
+    # Generic fallback
+    if not knowledge_points:
+        knowledge_points.append("Use industry standard best practices")
+    
+    return "\n- ".join(knowledge_points)
 
 def generate_coding_stok(original: str) -> StructuredPrompt:
-    requirements = extract_key_requirements(original, "coding")
-    requirements_text = "\n".join([f"-   {req}" for req in requirements])
+    knowledge_content = extract_rich_knowledge(original, "coding")
     
+    # Customize Task based on specific keywords
+    task_intro = f"Create a production-ready solution for '{original}'."
+    if "calculator" in original.lower():
+        task_intro = "Develop an advanced Calculator application that goes beyond basic arithmetic."
+
     return StructuredPrompt(
-        situation=f"You are developing {original.strip()} that users will interact with to achieve specific functionality.",
-        task=f"""Create a fully functional {original.strip()} with a user interface that allows users to interact with it effectively. The application should:
-{requirements_text}""",
-        objective=f"Build {original.strip()} that is intuitive, responsive, and handles common user interactions and edge cases gracefully, providing accurate results.",
-        knowledge=f"""-   Use modern best practices and design patterns
--   Ensure responsive design that works on different screen sizes
--   Include proper error messages for invalid inputs
--   Make the code maintainable with clear variable names and comments
--   Test edge cases thoroughly before deployment"""
+        situation=f"You are an expert Senior Software Engineer with 10+ years of experience. You need to architect and build '{original}' ensuring scalability, maintainability, and user experience.",
+        task=f"""{task_intro} The solution must include:
+-   Robust error handling (e.g., try/except blocks, custom exceptions)
+-   Modular architecture separating concerns
+-   Production-grade features (logging, config management)
+-   Full implementation of requested features with edge case coverage""",
+        objective=f"Deliver a high-quality, 'copy-paste ready' codebase for '{original}' that serves as a gold standard reference implementation.",
+        knowledge=f"- {knowledge_content}"
     )
 
 def generate_image_stok(original: str) -> StructuredPrompt:
     return StructuredPrompt(
-        situation=f"You need a high-quality visual asset representing '{original}' that meets professional artistic standards for composition, lighting, and detail.",
-        task=f"""Create a stunning visual representation of '{original}' that includes:
--   A clear, focused subject matter
--   Cinematic lighting and atmospheric depth
--   High-resolution textures and details (8k quality)
--   Harmonious color palette and composition
--   Specific artistic style (e.g., photorealistic, digital art)""",
-        objective="Generate a photorealistic or artistically consistent image that captures the essence of the subject with perfect composition and no visual artifacts.",
-        knowledge="""-   Use the Rule of Thirds for composition
--   Ensure lighting matches the mood (e.g., golden hour, neon, soft studio)
--   Avoid common AI artifacts (distorted hands, blurry text)
--   Maintain consistent style throughout the image
--   Use negative prompts to filter out unwanted elements"""
+        situation=f"You need a high-quality visual asset representing '{original}' that meets professional artistic standards.",
+        task=f"Create a stunning visual representation of '{original}' with focus on composition, lighting, and texture.",
+        objective="Generate a photorealistic or artistically consistent image without visual artifacts.",
+        knowledge="""- Use the Rule of Thirds for composition
+- Ensure lighting matches the mood (e.g., golden hour, neon)
+- Avoid common AI artifacts (distorted hands)
+- Use negative prompts to filter out unwanted elements"""
     )
 
 def generate_writing_stok(original: str) -> StructuredPrompt:
     return StructuredPrompt(
-        situation=f"You need a compelling written piece about '{original}' that engages the reader and communicates the core message effectively.",
-        task=f"""Write a comprehensive piece about '{original}' that includes:
--   A strong, attention-grabbing hook
--   Logical flow and structured paragraphs
--   Clear and persuasive arguments or narrative
--   Appropriate tone and voice for the target audience
--   A memorable conclusion""",
-        objective="Produce content that captures the reader's attention, maintains a consistent tone, and delivers the message effectively without fluff.",
-        knowledge="""-   Use active voice for better engagement
--   Vary sentence structure to maintain rhythm
--   Include sensory details or specific examples
--   Ensure grammatical correctness and clarity
--   Tailor the vocabulary to the intended audience"""
+        situation=f"You need a compelling written piece about '{original}' that engages the reader.",
+        task=f"Write a comprehensive piece about '{original}' with a strong hook and logical flow.",
+        objective="Produce content that captures the reader's attention and delivers the message effectively.",
+        knowledge="""- Use active voice for better engagement
+- Vary sentence structure to maintain rhythm
+- Include sensory details or specific examples
+- Tailor vocabulary to the intended audience"""
     )
 
 def generate_marketing_stok(original: str) -> StructuredPrompt:
     return StructuredPrompt(
-        situation=f"You are developing a marketing strategy for '{original}' and need to identify and define the target audience segments that would be most receptive to your product.",
-        task=f"""Identify and describe 4-5 distinct audience segments for '{original}', including:
--   Demographics (age, location, income)
--   Psychographics (interests, values, lifestyle)
--   Purchasing behaviors and key drivers
--   Primary motivations for engaging with the brand""",
-        objective="Create a clear audience profile that will guide marketing messaging, channel selection, and product positioning to maximize market reach and brand resonance.",
-        knowledge="""-   Consider audiences ranging from budget-conscious to premium consumers
--   Analyze both B2B and B2C segments if applicable
--   Focus on pain points and how the product solves them
--   Look for underserved niches in the current market
--   Consider the customer journey from awareness to loyalty"""
+        situation=f"You are developing a marketing strategy for '{original}' to identify target segments.",
+        task=f"Identify and describe 4-5 distinct audience segments for '{original}' including demographics and psychographics.",
+        objective="Create clear audience profiles to guide messaging and maximizing market reach.",
+        knowledge="""- Consider budget-conscious vs premium consumers
+- Focus on pain points and solutions
+- Analyze B2B and B2C segments if applicable
+- Consider the full customer journey"""
     )
 
 def generate_general_stok(original: str) -> StructuredPrompt:
     return StructuredPrompt(
-        situation=f"You need a comprehensive and well-researched answer for '{original}' that provides deep insight and actionable information.",
-        task=f"""Analyze the request '{original}' and provide a detailed response that includes:
--   A direct and clear answer to the core question
--   Key concepts and definitions relevant to the topic
--   Step-by-step explanations or logical arguments
--   Real-world examples or case studies to illustrate points
--   Potential challenges or alternative perspectives""",
-        objective="Deliver a high-quality, authoritative response that fully addresses the user's needs, clears up any confusion, and provides value beyond a simple answer.",
-        knowledge="""-   Synthesize information from reliable sources
--   Break down complex ideas into simple, understandable terms
--   Use analogies to explain abstract concepts
--   Structure the response with clear headings and bullet points
--   Anticipate the 'why' and 'how' behind the user's query"""
+        situation=f"You need a comprehensive answer for '{original}'.",
+        task=f"Analyze '{original}' and provide a detailed response with definitions, examples, and logical arguments.",
+        objective="Deliver a authoritative response that fully addresses the user's needs.",
+        knowledge="""- Synthesize information from reliable sources
+- Break down complex ideas
+- Use analogies and clear formatting"""
     )
 
 def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
@@ -176,19 +184,17 @@ def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
     
     if intent == "coding":
         stok = generate_coding_stok(prompt)
-        suggestions = ["Specify the programming language", "Mention specific libraries", "Describe expected input/output"]
     elif intent == "image":
         stok = generate_image_stok(prompt)
-        suggestions = ["Add aspect ratio (e.g., --ar 16:9)", "Specify an art style", "Describe lighting conditions"]
     elif intent == "writing":
         stok = generate_writing_stok(prompt)
-        suggestions = ["Define the target audience", "Specify word count", "Choose a specific tone"]
     elif intent == "marketing":
         stok = generate_marketing_stok(prompt)
-        suggestions = ["Define the budget range", "Specify the geographic region", "Identify key competitors"]
     else:
         stok = generate_general_stok(prompt)
-        suggestions = ["Be more specific about the goal", "Provide context", "Ask for a specific format"]
+    
+    # Generate dynamic suggestions based on intent and content
+    suggestions = generate_dynamic_suggestions(prompt, intent)
     
     # Create the full text version for copy-pasting
     full_text = f"""**Situation**
