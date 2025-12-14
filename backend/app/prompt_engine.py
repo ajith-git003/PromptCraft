@@ -1,6 +1,17 @@
-import re
-from typing import Dict, List, Optional
+import os
+import google.generativeai as genai
+from typing import List, Optional
 from pydantic import BaseModel
+import re
+
+# Configure Gemini API
+GENAI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GENAI_API_KEY:
+    genai.configure(api_key=GENAI_API_KEY)
+    model = genai.GenerativeModel('gemini-pro')
+else:
+    model = None
+    print("Warning: GEMINI_API_KEY not found. Helper functions will return fallback data.")
 
 class StructuredPrompt(BaseModel):
     situation: str
@@ -16,218 +27,122 @@ class PromptAnalysis(BaseModel):
     confidence_score: int
     suggestions: List[str]
 
-def identify_intent(text: str) -> str:
-    """Identify the intent of the prompt (coding, image, writing, marketing, general)."""
-    # Fast Regex Tokenization (Replaces heavy NLP)
-    # 1. Lowercase
-    # 2. Remove non-alphanumeric characters
-    # 3. Split into unique word set
-    cleaned_text = re.sub(r'[^a-z0-9\s]', '', text.lower())
-    tokens = set(cleaned_text.split())
-    
-    # Expanded keywords to handle variations (since we removed lemmatization)
-    coding_keywords = {
-        "code", "coding", "coder", "program", "programming", "python", "script", "scripting", 
-        "function", "api", "app", "application", "html", "css", "react", "bug", "error", 
-        "debug", "debugging", "calculator", "dev", "developer", "software", "web"
-    }
-    image_keywords = {
-        "image", "images", "photo", "photos", "picture", "pictures", "logo", "logos", 
-        "design", "designs", "draw", "drawing", "illustration", "illustrations", "sketch", 
-        "sketching", "art", "artist", "4k", "realistic", "render", "rendering"
-    }
-    writing_keywords = {
-        "write", "writing", "writer", "story", "stories", "essay", "essays", "article", 
-        "articles", "blog", "blogs", "email", "emails", "letter", "letters", "poem", 
-        "poems", "summary", "summarize", "rewrite", "rewriting", "content", "copy"
-    }
-    marketing_keywords = {
-        "marketing", "market", "brand", "branding", "audience", "audiences", "strategy", 
-        "strategies", "sell", "selling", "product", "products", "customer", "customers", 
-        "demographic", "demographics", "campaign", "campaigns", "ad", "ads", "advertising", 
-        "social", "media"
-    }
-    
-    if tokens & coding_keywords:
-        return "coding"
-    if tokens & image_keywords:
-        return "image"
-    if tokens & writing_keywords:
-        return "writing"
-    if tokens & marketing_keywords:
-        return "marketing"
+def identify_intent_fallback(text: str) -> str:
+    """Simple intent detection for fallback."""
+    text = text.lower()
+    if any(k in text for k in ["code", "python", "function", "api", "app"]): return "coding"
+    if any(k in text for k in ["image", "photo", "logo", "design"]): return "image"
+    if any(k in text for k in ["write", "blog", "essay", "email"]): return "writing"
+    if any(k in text for k in ["market", "brand", "audience", "ad"]): return "marketing"
     return "general"
 
-def generate_dynamic_suggestions(prompt: str, intent: str) -> List[str]:
-    """Generate smart suggestions based on what is MISSING from the prompt."""
-    prompt_lower = prompt.lower()
-    suggestions = []
-
-    if intent == "coding":
-        # Language Check
-        if not any(lang in prompt_lower for lang in ["python", "javascript", "java", "c++", "html", "css", "sql", "react", "node"]):
-            suggestions.append("Specify the programming language (e.g., Python, JavaScript)")
-        elif "python" in prompt_lower:
-            suggestions.append("Specify target Python version (e.g., 3.9+)")
-            suggestions.append("Mention preferred libraries (e.g., Pandas, Typer)")
-
-        # Application Type Check
-        if "calculator" in prompt_lower:
-            if not any(ui in prompt_lower for ui in ["gui", "cli", "web", "tkinter", "flask", "react"]):
-                suggestions.append("Specify the interface: CLI, GUI (Tkinter/PyQt), or Web?")
-            suggestions.append("Do you need scientific functions (sin/cos/tan)?")
-        
-        # General Coding Checks
-        if "test" not in prompt_lower:
-            suggestions.append("Include requirements for unit tests (pytest/unittest)")
-    
-    elif intent == "image":
-        if "--ar" not in prompt_lower and "aspect ratio" not in prompt_lower:
-            suggestions.append("Specify aspect ratio (e.g., 16:9, 1:1)")
-        if "style" not in prompt_lower:
-            suggestions.append("Define an art style (e.g., Cyberpunk, Oil Painting)")
-
-    elif intent == "marketing":
-        if "budget" not in prompt_lower:
-            suggestions.append("Define the budget range")
-        if "competitor" not in prompt_lower:
-            suggestions.append("Identify key competitors")
-
-    # Fallback if list is too short
-    if len(suggestions) < 2:
-        suggestions.append("Add constraints or limitations")
-    
-    return suggestions[:3] # Return top 3 unique suggestions
-
-def extract_rich_knowledge(prompt: str, intent: str) -> str:
-    """Inject expert knowledge based on specific keywords."""
-    prompt_lower = prompt.lower()
-    knowledge_points = []
-
-    if intent == "coding":
-        # Base coding knowledge
-        knowledge_points.append("Follow Clean Code principles (DRY, SOLID)")
-        
-        if "python" in prompt_lower:
-            knowledge_points.append("Follow PEP 8 style guide for Python code")
-            knowledge_points.append("Use Type Hinting (typing module) for better maintainability")
-            knowledge_points.append("Include comprehensive Docstrings for all functions/classes")
-
-        if "calculator" in prompt_lower:
-            knowledge_points.append("Implement the Shunting-yard algorithm for parsing mathematical expressions")
-            knowledge_points.append("Separate business logic (Calculation) from UI code")
-            knowledge_points.append("Handle floating-point arithmetic precision issues (decimal module)")
-            knowledge_points.append("Support keyboard input binding for better UX")
-            knowledge_points.append("Implement a robust history tracking system with Undo/Redo")
-
-        if "api" in prompt_lower:
-            knowledge_points.append("Use proper HTTP Status Codes (200, 201, 400, 500)")
-            knowledge_points.append("Implement Rate Limiting and Authentication (JWT/OAuth)")
-    
-    # Generic fallback
-    if not knowledge_points:
-        knowledge_points.append("Use industry standard best practices")
-    
-    return "\n- ".join(knowledge_points)
-
-def generate_coding_stok(original: str) -> StructuredPrompt:
-    knowledge_content = extract_rich_knowledge(original, "coding")
-    
-    # Customize Task based on specific keywords
-    task_intro = f"Create a production-ready solution for '{original}'."
-    if "calculator" in original.lower():
-        task_intro = "Develop an advanced Calculator application that goes beyond basic arithmetic."
-
-    return StructuredPrompt(
-        situation=f"You are an expert Senior Software Engineer with 10+ years of experience. You need to architect and build '{original}' ensuring scalability, maintainability, and user experience.",
-        task=f"""{task_intro} The solution must include:
--   Robust error handling (e.g., try/except blocks, custom exceptions)
--   Modular architecture separating concerns
--   Production-grade features (logging, config management)
--   Full implementation of requested features with edge case coverage""",
-        objective=f"Deliver a high-quality, 'copy-paste ready' codebase for '{original}' that serves as a gold standard reference implementation.",
-        knowledge=f"- {knowledge_content}"
-    )
-
-def generate_image_stok(original: str) -> StructuredPrompt:
-    return StructuredPrompt(
-        situation=f"You need a high-quality visual asset representing '{original}' that meets professional artistic standards.",
-        task=f"Create a stunning visual representation of '{original}' with focus on composition, lighting, and texture.",
-        objective="Generate a photorealistic or artistically consistent image without visual artifacts.",
-        knowledge="""- Use the Rule of Thirds for composition
-- Ensure lighting matches the mood (e.g., golden hour, neon)
-- Avoid common AI artifacts (distorted hands)
-- Use negative prompts to filter out unwanted elements"""
-    )
-
-def generate_writing_stok(original: str) -> StructuredPrompt:
-    return StructuredPrompt(
-        situation=f"You need a compelling written piece about '{original}' that engages the reader.",
-        task=f"Write a comprehensive piece about '{original}' with a strong hook and logical flow.",
-        objective="Produce content that captures the reader's attention and delivers the message effectively.",
-        knowledge="""- Use active voice for better engagement
-- Vary sentence structure to maintain rhythm
-- Include sensory details or specific examples
-- Tailor vocabulary to the intended audience"""
-    )
-
-def generate_marketing_stok(original: str) -> StructuredPrompt:
-    return StructuredPrompt(
-        situation=f"You are developing a marketing strategy for '{original}' to identify target segments.",
-        task=f"Identify and describe 4-5 distinct audience segments for '{original}' including demographics and psychographics.",
-        objective="Create clear audience profiles to guide messaging and maximizing market reach.",
-        knowledge="""- Consider budget-conscious vs premium consumers
-- Focus on pain points and solutions
-- Analyze B2B and B2C segments if applicable
-- Consider the full customer journey"""
-    )
-
-def generate_general_stok(original: str) -> StructuredPrompt:
-    return StructuredPrompt(
-        situation=f"You need a comprehensive answer for '{original}'.",
-        task=f"Analyze '{original}' and provide a detailed response with definitions, examples, and logical arguments.",
-        objective="Deliver a authoritative response that fully addresses the user's needs.",
-        knowledge="""- Synthesize information from reliable sources
-- Break down complex ideas
-- Use analogies and clear formatting"""
-    )
-
 def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
-    """Main function to take a raw prompt and return a systematic one."""
-    intent = identify_intent(prompt)
+    """Uses Gemini API to generate a high-quality STOK prompt."""
     
-    if intent == "coding":
-        stok = generate_coding_stok(prompt)
-    elif intent == "image":
-        stok = generate_image_stok(prompt)
-    elif intent == "writing":
-        stok = generate_writing_stok(prompt)
-    elif intent == "marketing":
-        stok = generate_marketing_stok(prompt)
-    else:
-        stok = generate_general_stok(prompt)
-    
-    # Generate dynamic suggestions based on intent and content
-    suggestions = generate_dynamic_suggestions(prompt, intent)
-    
-    # Create the full text version for copy-pasting
-    full_text = f"""**Situation**
-{stok.situation}
+    if not model:
+        # Fallback if no API key (prevents crashing)
+        return PromptAnalysis(
+            original_prompt=prompt,
+            enhanced_prompt="Error: GEMINI_API_KEY not set. Please add it to your environment variables.",
+            structured_prompt=StructuredPrompt(
+                situation="API Key Missing",
+                task="Please configure backend environment variables.",
+                objective="Enable AI Features",
+                knowledge="Get key from aistudio.google.com"
+            ),
+            intent="general",
+            confidence_score=0,
+            suggestions=["Add GEMINI_API_KEY to backend .env", "Deploy with env var"]
+        )
+
+    try:
+        # Construct the prompt for Gemini
+        system_instruction = f"""
+        You are an expert prompt engineer. Analyze the user's request: "{prompt}"
+        
+        1. Identify the Intent (Coding, Image, Writing, Marketing, or General).
+        2. Create a "Situation, Task, Objective, Knowledge" (STOK) framework analysis.
+        3. Generate 3 specific, high-value suggestions to improve their request.
+        
+        Output strictly in this format (no markdown code blocks, just the text sections separated by special markers):
+        
+        [INTENT]
+        (The intent here)
+        
+        [SITUATION]
+        (Detailed situation with context)
+        
+        [TASK]
+        (Specific instructions with bullet points)
+        
+        [OBJECTIVE]
+        (Clear success criteria)
+        
+        [KNOWLEDGE]
+        (Expert tips, best practices, bullet points)
+        
+        [SUGGESTIONS]
+        (Suggestion 1)
+        (Suggestion 2)
+        (Suggestion 3)
+        """
+        
+        response = model.generate_content(system_instruction)
+        text_resp = response.text
+        
+        # Parse logic
+        intent_match = re.search(r'\[INTENT\]\s*(.*?)\s*(?=\[SITUATION\])', text_resp, re.DOTALL)
+        situation_match = re.search(r'\[SITUATION\]\s*(.*?)\s*(?=\[TASK\])', text_resp, re.DOTALL)
+        task_match = re.search(r'\[TASK\]\s*(.*?)\s*(?=\[OBJECTIVE\])', text_resp, re.DOTALL)
+        objective_match = re.search(r'\[OBJECTIVE\]\s*(.*?)\s*(?=\[KNOWLEDGE\])', text_resp, re.DOTALL)
+        knowledge_match = re.search(r'\[KNOWLEDGE\]\s*(.*?)\s*(?=\[SUGGESTIONS\])', text_resp, re.DOTALL)
+        suggestions_match = re.search(r'\[SUGGESTIONS\]\s*(.*)', text_resp, re.DOTALL)
+        
+        intent = intent_match.group(1).strip() if intent_match else "general"
+        situation = situation_match.group(1).strip() if situation_match else "Could not generate situation."
+        task = task_match.group(1).strip() if task_match else "Could not generate task."
+        objective = objective_match.group(1).strip() if objective_match else "Could not generate objective."
+        knowledge = knowledge_match.group(1).strip() if knowledge_match else "Could not generate knowledge."
+        suggestions_raw = suggestions_match.group(1).strip() if suggestions_match else ""
+        
+        # Split suggestions by newlines and clean up
+        suggestions = [s.strip('- ').strip() for s in suggestions_raw.split('\n') if s.strip()]
+        
+        stok = StructuredPrompt(
+            situation=situation,
+            task=task,
+            objective=objective,
+            knowledge=knowledge
+        )
+        
+        full_text = f"""**Situation**
+{situation}
 
 **Task**
-{stok.task}
+{task}
 
 **Objective**
-{stok.objective}
+{objective}
 
 **Knowledge**
-{stok.knowledge}"""
+{knowledge}"""
 
-    return PromptAnalysis(
-        original_prompt=prompt,
-        enhanced_prompt=full_text,
-        structured_prompt=stok,
-        intent=intent,
-        confidence_score=95,
-        suggestions=suggestions
-    )
+        return PromptAnalysis(
+            original_prompt=prompt,
+            enhanced_prompt=full_text,
+            structured_prompt=stok,
+            intent=intent,
+            confidence_score=98,
+            suggestions=suggestions[:3]
+        )
+
+    except Exception as e:
+        # Error handling
+        return PromptAnalysis(
+            original_prompt=prompt,
+            enhanced_prompt=f"Error generating prompt: {str(e)}",
+            structured_prompt=StructuredPrompt(situation="Error", task="Error", objective="Error", knowledge="Error"),
+            intent="error",
+            confidence_score=0,
+            suggestions=["Check API Quota", "Verify Internet Connection"]
+        )
