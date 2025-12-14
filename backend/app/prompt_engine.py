@@ -1,13 +1,6 @@
-import spacy
+import re
 from typing import Dict, List, Optional
 from pydantic import BaseModel
-
-# Load NLP model
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    from spacy.lang.en import English
-    nlp = English()
 
 class StructuredPrompt(BaseModel):
     situation: str
@@ -25,14 +18,35 @@ class PromptAnalysis(BaseModel):
 
 def identify_intent(text: str) -> str:
     """Identify the intent of the prompt (coding, image, writing, marketing, general)."""
-    doc = nlp(text.lower())
+    # Fast Regex Tokenization (Replaces heavy NLP)
+    # 1. Lowercase
+    # 2. Remove non-alphanumeric characters
+    # 3. Split into unique word set
+    cleaned_text = re.sub(r'[^a-z0-9\s]', '', text.lower())
+    tokens = set(cleaned_text.split())
     
-    coding_keywords = {"code", "python", "script", "function", "api", "app", "html", "css", "react", "bug", "error", "debug", "calculator", "dev"}
-    image_keywords = {"image", "photo", "picture", "logo", "design", "draw", "illustration", "sketch", "art", "4k", "realistic"}
-    writing_keywords = {"write", "story", "essay", "article", "blog", "email", "letter", "poem", "summary", "rewrite"}
-    marketing_keywords = {"marketing", "brand", "audience", "strategy", "sell", "product", "market", "customer", "demographic", "campaign", "ad", "social media"}
-    
-    tokens = {token.lemma_ for token in doc}
+    # Expanded keywords to handle variations (since we removed lemmatization)
+    coding_keywords = {
+        "code", "coding", "coder", "program", "programming", "python", "script", "scripting", 
+        "function", "api", "app", "application", "html", "css", "react", "bug", "error", 
+        "debug", "debugging", "calculator", "dev", "developer", "software", "web"
+    }
+    image_keywords = {
+        "image", "images", "photo", "photos", "picture", "pictures", "logo", "logos", 
+        "design", "designs", "draw", "drawing", "illustration", "illustrations", "sketch", 
+        "sketching", "art", "artist", "4k", "realistic", "render", "rendering"
+    }
+    writing_keywords = {
+        "write", "writing", "writer", "story", "stories", "essay", "essays", "article", 
+        "articles", "blog", "blogs", "email", "emails", "letter", "letters", "poem", 
+        "poems", "summary", "summarize", "rewrite", "rewriting", "content", "copy"
+    }
+    marketing_keywords = {
+        "marketing", "market", "brand", "branding", "audience", "audiences", "strategy", 
+        "strategies", "sell", "selling", "product", "products", "customer", "customers", 
+        "demographic", "demographics", "campaign", "campaigns", "ad", "ads", "advertising", 
+        "social", "media"
+    }
     
     if tokens & coding_keywords:
         return "coding"
