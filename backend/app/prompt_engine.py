@@ -8,7 +8,7 @@ import re
 GENAI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GENAI_API_KEY:
     genai.configure(api_key=GENAI_API_KEY)
-    model = genai.GenerativeModel('gemini-pro')
+    model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     model = None
     print("Warning: GEMINI_API_KEY not found. Helper functions will return fallback data.")
