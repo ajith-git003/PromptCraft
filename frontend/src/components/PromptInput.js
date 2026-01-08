@@ -22,6 +22,12 @@ export default function PromptInput() {
     }
   }, []);
 
+  const deleteHistoryItem = (id) => {
+    const newHistory = history.filter(item => item.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem('promptHistory', JSON.stringify(newHistory));
+  };
+
   // Render history items into sidebar
   useEffect(() => {
     const sidebarContent = document.getElementById('history-sidebar-content');
@@ -61,7 +67,7 @@ export default function PromptInput() {
         sidebarContent.appendChild(container);
       });
     }
-  }, [history]);
+  }, [history, deleteHistoryItem]);
 
   const generatePrompt = async () => {
     if (!prompt.trim()) return;
@@ -102,19 +108,6 @@ export default function PromptInput() {
   const loadHistoryItem = (item) => {
     setPrompt(item.prompt);
     setResult(item.result);
-  };
-
-  const clearHistory = () => {
-    if (window.confirm('Are you sure you want to clear all history?')) {
-      setHistory([]);
-      localStorage.removeItem('promptHistory');
-    }
-  };
-
-  const deleteHistoryItem = (id) => {
-    const newHistory = history.filter(item => item.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem('promptHistory', JSON.stringify(newHistory));
   };
 
   return (
