@@ -1,17 +1,24 @@
 import os
-import google.generativeai as genai
+from dotenv import load_dotenv
+from openai import OpenAI
 from typing import List, Optional
 from pydantic import BaseModel
 import re
 
-# Configure Gemini API
-GENAI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GENAI_API_KEY:
-    genai.configure(api_key=GENAI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-pro')
+# Load environment variables from .env file
+load_dotenv()
+
+# Configure OpenAI API
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+print(f"\n✅ Checking API Key...")
+print(f"API Key loaded: {'Yes' if OPENAI_API_KEY else 'No'}")
+if OPENAI_API_KEY:
+    print(f"API Key (first 10 chars): {OPENAI_API_KEY[:10]}...")
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    print("✅ OpenAI client initialized successfully")
 else:
-    model = None
-    print("Warning: GEMINI_API_KEY not found. Helper functions will return fallback data.")
+    client = None
+    print("❌ Warning: OPENAI_API_KEY not found. Helper functions will return fallback data.")
 
 class StructuredPrompt(BaseModel):
     situation: str
@@ -37,32 +44,42 @@ def identify_intent_fallback(text: str) -> str:
     return "general"
 
 def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
-    """Uses Gemini API to generate a high-quality STOK prompt."""
+    """Uses OpenAI API to generate a high-quality STOK prompt."""
     
-    if not model:
+    if not client:
         # Fallback if no API key (prevents crashing)
         return PromptAnalysis(
             original_prompt=prompt,
-            enhanced_prompt="Error: GEMINI_API_KEY not set. Please add it to your environment variables.",
+            enhanced_prompt="Error: OPENAI_API_KEY not set. Please add it to your environment variables.",
             structured_prompt=StructuredPrompt(
                 situation="API Key Missing",
                 task="Please configure backend environment variables.",
                 objective="Enable AI Features",
-                knowledge="Get key from aistudio.google.com"
+                knowledge="Get key from platform.openai.com"
             ),
             intent="general",
             confidence_score=0,
-            suggestions=["Add GEMINI_API_KEY to backend .env", "Deploy with env var"]
+            suggestions=["Add OPENAI_API_KEY to backend .env", "Deploy with env var"]
         )
 
     try:
         # Construct the prompt for Gemini
         system_instruction = f"""
-        You are an expert prompt engineer. Analyze the user's request: "{prompt}"
+        You are an expert prompt engineer. The user wants: "{prompt}"
+        
+        Create an action-oriented STOK (Situation, Task, Objective, Knowledge) framework that helps them accomplish this goal.
+        
+        IMPORTANT GUIDELINES:
+        - Situation: Define the ACTUAL scenario they are working in (NOT a meta-analysis of their request)
+        - Task: Provide specific, actionable instructions for what needs to be done
+        - Objective: Define clear success criteria for the output
+        - Knowledge: List required information, best practices, or context needed
+        - Use proper markdown formatting with dashes (-) for bullet points
+        - Make content specific to their request, not generic
         
         1. Identify the Intent (Coding, Image, Writing, Marketing, or General).
-        2. Create a "Situation, Task, Objective, Knowledge" (STOK) framework analysis.
-        3. Generate 3 specific, high-value suggestions to improve their request.
+        2. Create the STOK framework.
+        3. Generate 3 specific, actionable suggestions.
         
         Output strictly in this format (no markdown code blocks, just the text sections separated by special markers):
         
@@ -70,25 +87,32 @@ def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
         (The intent here)
         
         [SITUATION]
-        (Detailed situation with context)
+        (Define the ACTUAL working scenario - e.g., "You are writing a blog post for an audience interested in AI technology...")
         
         [TASK]
-        (Specific instructions with bullet points)
+        (Specific instructions with proper markdown bullet points using dashes)
         
         [OBJECTIVE]
         (Clear success criteria)
         
         [KNOWLEDGE]
-        (Expert tips, best practices, bullet points)
+        (Required information, best practices - use proper markdown bullet points with dashes)
         
         [SUGGESTIONS]
-        (Suggestion 1)
-        (Suggestion 2)
-        (Suggestion 3)
+        - (Suggestion 1)
+        - (Suggestion 2)
+        - (Suggestion 3)
         """
         
-        response = model.generate_content(system_instruction)
-        text_resp = response.text
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are an expert prompt engineer."},
+                {"role": "user", "content": system_instruction}
+            ],
+            temperature=0.7
+        )
+        text_resp = response.choices[0].message.content
         
         # Parse logic
         intent_match = re.search(r'\[INTENT\]\s*(.*?)\s*(?=\[SITUATION\])', text_resp, re.DOTALL)
@@ -137,12 +161,23 @@ def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
         )
 
     except Exception as e:
-        # Error handling
+        # Error handling with detailed logging
+        error_msg = f"Error generating prompt: {str(e)}"
+        print(f"\n❌ GEMINI API ERROR: {error_msg}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        
         return PromptAnalysis(
             original_prompt=prompt,
-            enhanced_prompt=f"Error generating prompt: {str(e)}",
-            structured_prompt=StructuredPrompt(situation="Error", task="Error", objective="Error", knowledge="Error"),
+            enhanced_prompt=error_msg,
+            structured_prompt=StructuredPrompt(
+                situation=f"API Error: {type(e).__name__}",
+                task=str(e),
+                objective="Fix the API configuration",
+                knowledge="Check console for detailed error"
+            ),
             intent="error",
             confidence_score=0,
-            suggestions=["Check API Quota", "Verify Internet Connection"]
+            suggestions=["Check API Quota", "Verify Internet Connection", "Check API Key"]
         )

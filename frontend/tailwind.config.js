@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
@@ -11,10 +12,23 @@ module.exports = {
           800: '#1e293b',
           700: '#334155',
         },
+        beige: {
+          50: '#fdfcfb',
+          100: '#f5f1e8',
+          200: '#ebe3d5',
+          300: '#dfd2bb',
+          400: '#d4c5a8',
+          500: '#c8b896',
+        },
         neon: {
           blue: '#3b82f6',
           purple: '#8b5cf6',
           pink: '#ec4899',
+        },
+        warm: {
+          blue: '#2563eb',
+          purple: '#7c3aed',
+          pink: '#db2777',
         }
       },
       animation: {

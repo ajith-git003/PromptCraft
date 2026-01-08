@@ -9,8 +9,9 @@ app = FastAPI(title="AI Prompt Studio API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow all origins (frontend access)
+    allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 class PromptRequest(BaseModel):

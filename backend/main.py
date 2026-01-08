@@ -1,8 +1,6 @@
-from fastapi import FastAPI
+# Import the main app from the app module
+from app.main import app
 
-app = FastAPI()
-
-@app.get("/")
-def home():
-    return{"message":"Promptcraft backend running!"}
+# This allows GCP/Vercel to find the app instance
+# The actual routes are defined in app/main.py
     
