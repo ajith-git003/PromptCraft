@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
 const API_URL = "https://promptcraft-tssy.onrender.com";
@@ -22,11 +22,11 @@ export default function PromptInput() {
     }
   }, []);
 
-  const deleteHistoryItem = (id) => {
+  const deleteHistoryItem = useCallback((id) => {
     const newHistory = history.filter(item => item.id !== id);
     setHistory(newHistory);
     localStorage.setItem('promptHistory', JSON.stringify(newHistory));
-  };
+  }, [history]);
 
   // Render history items into sidebar
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function PromptInput() {
         sidebarContent.appendChild(container);
       });
     }
-  }, [history, deleteHistoryItem]);
+  }, [history, deleteHistoryItem, loadHistoryItem]);
 
   const generatePrompt = async () => {
     if (!prompt.trim()) return;
@@ -105,10 +105,10 @@ export default function PromptInput() {
     navigator.clipboard.writeText(text);
   };
 
-  const loadHistoryItem = (item) => {
+  const loadHistoryItem = useCallback((item) => {
     setPrompt(item.prompt);
     setResult(item.result);
-  };
+  }, []);
 
   return (
     <div className="w-full max-w-7xl mx-auto">
