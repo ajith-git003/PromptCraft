@@ -22,6 +22,11 @@ export default function PromptInput() {
     }
   }, []);
 
+  const loadHistoryItem = useCallback((item) => {
+    setPrompt(item.prompt);
+    setResult(item.result);
+  }, []);
+
   const deleteHistoryItem = useCallback((id) => {
     const newHistory = history.filter(item => item.id !== id);
     setHistory(newHistory);
@@ -104,11 +109,6 @@ export default function PromptInput() {
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
   };
-
-  const loadHistoryItem = useCallback((item) => {
-    setPrompt(item.prompt);
-    setResult(item.result);
-  }, []);
 
   return (
     <div className="w-full max-w-7xl mx-auto">
