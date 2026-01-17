@@ -100,7 +100,6 @@ PromptCraft/
 └── README.md
 
 
-
 ---
 
 ## Live Application
