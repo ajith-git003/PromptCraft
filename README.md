@@ -79,26 +79,27 @@ spaCy NLP Pipeline
 
 ## Project Structure
 
+```text
 PromptCraft/
 ├── backend/
-│ ├── app/
-│ │ ├── main.py # API routes
-│ │ ├── models.py # Pydantic schemas
-│ │ └── prompt_analysis.py # NLP analysis logic
-│ ├── Dockerfile
-│ └── requirements.txt
+│   ├── app/
+│   │   ├── main.py                 # API routes
+│   │   ├── models.py               # Pydantic schemas
+│   │   └── prompt_analysis.py      # NLP analysis logic
+│   ├── Dockerfile
+│   └── requirements.txt
 │
 ├── frontend/
-│ ├── src/
-│ ├── Dockerfile
-│ ├── nginx.conf
-│ └── package.json
+│   ├── src/
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   └── package.json
 │
 ├── docker-compose.yml
 ├── ARCHITECTURE.md
 ├── DEPLOYMENT.md
 └── README.md
-
+```
 
 ---
 
