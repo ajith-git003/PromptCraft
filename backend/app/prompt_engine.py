@@ -8,17 +8,15 @@ import re
 # Load environment variables from .env file
 load_dotenv()
 
+from app.embeddings import analyze_similarity
+
 # Configure OpenAI API
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-print(f"\n✅ Checking API Key...")
-print(f"API Key loaded: {'Yes' if OPENAI_API_KEY else 'No'}")
+
 if OPENAI_API_KEY:
-    print(f"API Key (first 10 chars): {OPENAI_API_KEY[:10]}...")
     client = OpenAI(api_key=OPENAI_API_KEY)
-    print("✅ OpenAI client initialized successfully")
 else:
     client = None
-    print("❌ Warning: OPENAI_API_KEY not found. Helper functions will return fallback data.")
 
 class StructuredPrompt(BaseModel):
     situation: str
@@ -32,6 +30,8 @@ class PromptAnalysis(BaseModel):
     structured_prompt: StructuredPrompt
     intent: str
     confidence_score: int
+    similarity_score: float
+    is_vague: bool
     suggestions: List[str]
 
 def identify_intent_fallback(text: str) -> str:
@@ -59,13 +59,24 @@ def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
             ),
             intent="general",
             confidence_score=0,
+            similarity_score=0.0,
+            is_vague=True,
             suggestions=["Add OPENAI_API_KEY to backend .env", "Deploy with env var"]
         )
 
     try:
-        # Construct the prompt for Gemini
+        # Hybrid Analysis: Calculate Similarity first
+        similarity_score, is_vague = analyze_similarity(prompt)
+        
+        # Context note for the LLM
+        vague_context = ""
+        if is_vague:
+            vague_context = "\nNOTE: This prompt seems VAGUE or low-quality based on semantic analysis. Please provide extra guidance on how to make it specific."
+
+        # Construct the prompt for OpenAI
         system_instruction = f"""
         You are an expert prompt engineer. The user wants: "{prompt}"
+        {vague_context}
         
         Create an action-oriented STOK (Situation, Task, Objective, Knowledge) framework that helps them accomplish this goal.
         
@@ -157,6 +168,8 @@ def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
             structured_prompt=stok,
             intent=intent,
             confidence_score=98,
+            similarity_score=float(similarity_score),
+            is_vague=is_vague,
             suggestions=suggestions[:3]
         )
 
@@ -179,5 +192,7 @@ def generate_systematic_prompt(prompt: str) -> PromptAnalysis:
             ),
             intent="error",
             confidence_score=0,
+            similarity_score=0.0,
+            is_vague=True,
             suggestions=["Check API Quota", "Verify Internet Connection", "Check API Key"]
         )

@@ -85,7 +85,7 @@ PromptCraft/
 │   ├── app/
 │   │   ├── main.py                 # API routes
 │   │   ├── models.py               # Pydantic schemas
-│   │   └── prompt_analysis.py      # NLP analysis logic
+│   │   └── prompt_engine.py        # Hybrid AI logic
 │   ├── Dockerfile
 │   └── requirements.txt
 │
@@ -95,11 +95,30 @@ PromptCraft/
 │   ├── nginx.conf
 │   └── package.json
 │
+├── docs/                       # Project documentation
+│   ├── analysis/               # Gap analysis & reports
+│   ├── features/               # Feature implementations
+│   ├── interview/              # Guides & summaries
+│   ├── setup/                  # Deployment & testing
+│   └── ui/                     # Visual guides & themes
+│
 ├── docker-compose.yml
 ├── ARCHITECTURE.md
 ├── DEPLOYMENT.md
 └── README.md
 ```
+
+---
+
+## 📚 Documentation
+
+Detailed documentation and design notes are organized inside the `/docs` directory:
+
+- **Features**: Implementation details of core features.
+- **Analysis**: Gap analysis, comparisons, and session summaries.
+- **Interview**: Project summaries and ML roadmaps for interview prep.
+- **UI**: Visual guides and Tailwind configurations.
+- **Setup**: Quickstart guides and deployment instructions.
 
 ---
 

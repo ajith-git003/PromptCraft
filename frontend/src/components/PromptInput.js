@@ -51,13 +51,13 @@ export default function PromptInput() {
         // Create container for history item
         const container = document.createElement('div');
         container.className = 'relative mb-2 group';
-        
+
         // Create the main button
         const button = document.createElement('button');
         button.className = 'w-full text-left px-3 py-2 pr-10 rounded-lg bg-beige-50 dark:bg-midnight-900/50 hover:bg-white dark:hover:bg-midnight-700 border border-transparent hover:border-warm-blue dark:hover:border-neon-blue transition-all';
         button.innerHTML = `<p class="text-sm text-gray-800 dark:text-gray-300 truncate">${item.prompt}</p>`;
         button.onclick = () => loadHistoryItem(item);
-        
+
         // Create delete button
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded opacity-0 group-hover:opacity-100 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all';
@@ -66,7 +66,7 @@ export default function PromptInput() {
           e.stopPropagation();
           deleteHistoryItem(item.id);
         };
-        
+
         container.appendChild(button);
         container.appendChild(deleteBtn);
         sidebarContent.appendChild(container);
@@ -83,8 +83,9 @@ export default function PromptInput() {
 
     try {
       const response = await axios.post(`${API_URL}/generate`, { prompt });
+      console.log("API Response:", response.data); // Debugging
       setResult(response.data);
-      
+
       // Save to history
       const historyItem = {
         id: Date.now(),
@@ -92,7 +93,7 @@ export default function PromptInput() {
         prompt: prompt,
         result: response.data
       };
-      
+
       const newHistory = [historyItem, ...history].slice(0, 20); // Keep only last 20 items
       setHistory(newHistory);
       localStorage.setItem('promptHistory', JSON.stringify(newHistory));
@@ -214,6 +215,21 @@ export default function PromptInput() {
                     Copy Full Prompt
                   </button>
                 </div>
+
+                {/* Vague Warning Alert */}
+                {result.is_vague && (
+                  <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg p-4 flex items-start gap-3">
+                    <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <h4 className="text-sm font-bold text-amber-800 dark:text-amber-200">Ambiguous Prompt Detected</h4>
+                      <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                        This prompt is quite vague. The AI has inferred a likely scenario, but providing more specific details (e.g., tech stack, audience, platform) will produce much better results.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* STOK Framework Display */}
                 <div className="space-y-6">
