@@ -1,23 +1,98 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import PromptInput from "../components/PromptInput";
 import { useTheme } from "../context/ThemeContext";
+import axios from "axios";
+
+const API_URL = "https://promptcraft-tssy.onrender.com";
 
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
-  
+
+  // State lifted from PromptInput
+  const [prompt, setPrompt] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  // Load history from localStorage on mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('promptHistory');
+    if (savedHistory) {
+      try {
+        setHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.error('Failed to load history:', e);
+      }
+    }
+  }, []);
+
+  const loadHistoryItem = useCallback((item) => {
+    setPrompt(item.prompt);
+    setResult(item.result);
+  }, []);
+
+  const deleteHistoryItem = useCallback((id) => {
+    const newHistory = history.filter(item => item.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem('promptHistory', JSON.stringify(newHistory));
+  }, [history]);
+
+  const generatePrompt = async () => {
+    if (!prompt.trim()) return;
+
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await axios.post(`${API_URL}/generate`, { prompt });
+      // console.log("API Response:", response.data); 
+      setResult(response.data);
+
+      // Save to history
+      const historyItem = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        prompt: prompt,
+        result: response.data
+      };
+
+      const newHistory = [historyItem, ...history].slice(0, 20); // Keep only last 20 items
+      setHistory(newHistory);
+      localStorage.setItem('promptHistory', JSON.stringify(newHistory));
+    } catch (err) {
+      setError(
+        err.response?.data?.detail ||
+        "Failed to generate prompt. Please check the backend connection."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPrompt = () => {
+    setPrompt("");
+    setResult(null);
+    setError(null);
+  };
+
   return (
     <div className="min-h-screen bg-beige-50 dark:bg-midnight-900 text-gray-900 dark:text-white overflow-hidden selection:bg-warm-blue selection:text-white dark:selection:bg-neon-blue transition-colors duration-300 flex">
       {/* Left Sidebar - History */}
       <aside className="w-64 bg-beige-100 dark:bg-midnight-800 border-r border-beige-300 dark:border-white/10 flex-shrink-0 overflow-hidden flex flex-col">
         <div className="p-4">
-          <button className="w-full px-4 py-3 bg-beige-50 dark:bg-midnight-900 hover:bg-white dark:hover:bg-midnight-700 rounded-lg border border-beige-300 dark:border-white/10 text-left font-medium text-gray-900 dark:text-white transition-all flex items-center gap-2">
+          <button
+            onClick={resetPrompt}
+            className="w-full px-4 py-3 bg-beige-50 dark:bg-midnight-900 hover:bg-white dark:hover:bg-midnight-700 rounded-lg border border-beige-300 dark:border-white/10 text-left font-medium text-gray-900 dark:text-white transition-all flex items-center gap-2"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
             New Prompt
           </button>
         </div>
-        
+
         <div className="px-4 pb-2">
           <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,8 +103,33 @@ export default function Home() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-2">
-          {/* History items will be rendered by PromptInput component */}
-          <div id="history-sidebar-content"></div>
+          {history.length === 0 ? (
+            <div className="text-center py-8 px-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400">No history yet</p>
+            </div>
+          ) : (
+            history.map((item) => (
+              <div key={item.id} className="relative mb-2 group">
+                <button
+                  onClick={() => loadHistoryItem(item)}
+                  className="w-full text-left px-3 py-2 pr-10 rounded-lg bg-beige-50 dark:bg-midnight-900/50 hover:bg-white dark:hover:bg-midnight-700 border border-transparent hover:border-warm-blue dark:hover:border-neon-blue transition-all"
+                >
+                  <p className="text-sm text-gray-800 dark:text-gray-300 truncate">{item.prompt}</p>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteHistoryItem(item.id);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded opacity-0 group-hover:opacity-100 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
+                >
+                  <svg className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            ))
+          )}
         </div>
 
       </aside>
@@ -44,74 +144,81 @@ export default function Home() {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 overflow-y-auto flex-1 w-full">
-        {/* Theme Toggle Button */}
-        <div className="absolute top-8 right-8">
-          <button
-            onClick={toggleTheme}
-            className="p-3 rounded-full bg-gray-800/10 dark:bg-white/10 hover:bg-gray-800/20 dark:hover:bg-white/20 border border-gray-800/20 dark:border-white/10 backdrop-blur-sm transition-all duration-300 group"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? (
-              <svg className="w-5 h-5 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-              </svg>
-            )}
-          </button>
-        </div>
-
-        {/* Hero Section */}
-        <div className="text-center mb-16 animate-float">
-          <div className="inline-block mb-4 px-4 py-1.5 rounded-full border border-gray-800/20 dark:border-white/10 bg-gray-800/5 dark:bg-white/5 backdrop-blur-sm">
-            <span className="text-sm font-medium text-amber-700 dark:text-amber-500">✨ AI-Powered Prompt Engineering</span>
+          {/* Theme Toggle Button */}
+          <div className="absolute top-8 right-8">
+            <button
+              onClick={toggleTheme}
+              className="p-3 rounded-full bg-gray-800/10 dark:bg-white/10 hover:bg-gray-800/20 dark:hover:bg-white/20 border border-gray-800/20 dark:border-white/10 backdrop-blur-sm transition-all duration-300 group"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <svg className="w-5 h-5 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                </svg>
+              )}
+            </button>
           </div>
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 tracking-tight">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600 dark:from-white dark:via-gray-200 dark:to-gray-400">
-              AI Prompt
-            </span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-800 dark:from-amber-500 dark:to-amber-700">
-              Studio
-            </span>
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
-            Transform simple ideas into professional, high-performance prompts for Coding, Art, and Writing.
-          </p>
-        </div>
 
-        {/* Main Component */}
-        <PromptInput />
-
-        {/* Features Section */}
-        <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              icon: "🚀",
-              title: "Instant Expansion",
-              desc: "Turn one-liners into comprehensive, structured prompts instantly."
-            },
-            {
-              icon: "🎨",
-              title: "Multi-Modal Support",
-              desc: "Specialized templates for Code, Image Generation (Midjourney/DALL-E), and Creative Writing."
-            },
-            {
-              icon: "⚡",
-              title: "Production Ready",
-              desc: "Optimized for LLMs like GPT, Claude, and Gemini."
-            }
-          ].map((feature, idx) => (
-            <div key={idx} className="group p-8 rounded-2xl bg-beige-200/50 dark:bg-white/5 border border-beige-300 dark:border-white/10 hover:bg-beige-200/70 dark:hover:bg-white/10 transition duration-300 backdrop-blur-sm">
-              <div className="text-4xl mb-4 group-hover:scale-110 transition duration-300">{feature.icon}</div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{feature.title}</h3>
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                {feature.desc}
-              </p>
+          {/* Hero Section */}
+          <div className="text-center mb-16 animate-float">
+            <div className="inline-block mb-4 px-4 py-1.5 rounded-full border border-gray-800/20 dark:border-white/10 bg-gray-800/5 dark:bg-white/5 backdrop-blur-sm">
+              <span className="text-sm font-medium text-amber-700 dark:text-amber-500">✨ AI-Powered Prompt Engineering</span>
             </div>
-          ))}
-        </div>
+            <h1 className="text-6xl md:text-7xl font-bold mb-6 tracking-tight">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600 dark:from-white dark:via-gray-200 dark:to-gray-400">
+                AI Prompt
+              </span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-800 dark:from-amber-500 dark:to-amber-700">
+                Studio
+              </span>
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
+              Transform simple ideas into professional, high-performance prompts for Coding, Art, and Writing.
+            </p>
+          </div>
+
+          {/* Main Component */}
+          <PromptInput
+            prompt={prompt}
+            setPrompt={setPrompt}
+            onGenerate={generatePrompt}
+            result={result}
+            loading={loading}
+            error={error}
+          />
+
+          {/* Features Section */}
+          <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: "🚀",
+                title: "Instant Expansion",
+                desc: "Turn one-liners into comprehensive, structured prompts instantly."
+              },
+              {
+                icon: "🎨",
+                title: "Multi-Modal Support",
+                desc: "Specialized templates for Code, Image Generation (Midjourney/DALL-E), and Creative Writing."
+              },
+              {
+                icon: "⚡",
+                title: "Production Ready",
+                desc: "Optimized for LLMs like GPT, Claude, and Gemini."
+              }
+            ].map((feature, idx) => (
+              <div key={idx} className="group p-8 rounded-2xl bg-beige-200/50 dark:bg-white/5 border border-beige-300 dark:border-white/10 hover:bg-beige-200/70 dark:hover:bg-white/10 transition duration-300 backdrop-blur-sm">
+                <div className="text-4xl mb-4 group-hover:scale-110 transition duration-300">{feature.icon}</div>
+                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{feature.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  {feature.desc}
+                </p>
+              </div>
+            ))}
+          </div>
 
         </div>
       </div>
