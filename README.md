@@ -1,70 +1,154 @@
-# Getting Started with Create React App
+# PromptCraft – AI Prompt Analysis & Optimization Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+PromptCraft is a full-stack web application that analyzes AI prompts and provides structured feedback to help users improve prompt clarity and effectiveness.
 
-## Available Scripts
+This project is built as a **production-style MVP**, focusing on clean architecture, explainable NLP logic, and real-world deployment.
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## What This Project Does
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Analyzes user-written AI prompts using NLP techniques  
+- Identifies unclear or weak parts of a prompt  
+- Provides actionable suggestions for improvement  
+- Generates a clearer, optimized version of the prompt  
+- Delivers feedback in real time through a web interface  
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Key Features
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Prompt Analysis**
+  - Evaluates clarity, specificity, structure, and completeness
+  - Detects ambiguous or missing information
 
-### `npm run build`
+- **Issue Detection**
+  - Highlights weak areas in prompts
+  - Explains why improvements are needed
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **Suggestions & Optimization**
+  - Provides practical rewriting suggestions
+  - Returns an improved version of the prompt
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **API-First Architecture**
+  - REST APIs built with FastAPI
+  - OpenAPI (Swagger) documentation included
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- **Production Deployment**
+  - Frontend deployed on Vercel
+  - Backend deployed on Render
+  - Dockerized services for consistency
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Tech Stack
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+**Backend**
+- FastAPI  
+- spaCy  
+- Pydantic  
+- Uvicorn  
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+**Frontend**
+- React  
+- Tailwind CSS  
+- Nginx  
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+**DevOps**
+- Docker & Docker Compose  
+- GitHub Actions  
+- Render & Vercel  
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Architecture Overview
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Browser
+↓
+React Frontend (Vercel)
+↓
+FastAPI Backend (Render)
+↓
+spaCy NLP Pipeline
 
-### Code Splitting
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- Frontend and backend are deployed as independent services  
+- Backend is stateless and API-driven  
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Project Structure
 
-### Making a Progressive Web App
+```text
+PromptCraft/
+├── backend/
+│   ├── app/
+│   │   ├── main.py                 # API routes
+│   │   ├── models.py               # Pydantic schemas
+│   │   └── prompt_engine.py        # Hybrid AI logic
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   └── package.json
+│
+├── docs/                       # Project documentation
+│   ├── analysis/               # Gap analysis & reports
+│   ├── features/               # Feature implementations
+│   ├── interview/              # Guides & summaries
+│   ├── setup/                  # Deployment & testing
+│   └── ui/                     # Visual guides & themes
+│
+├── docker-compose.yml
+├── ARCHITECTURE.md
+├── DEPLOYMENT.md
+└── README.md
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## 📚 Documentation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Detailed documentation and design notes are organized inside the `/docs` directory:
 
-### Deployment
+- **Features**: Implementation details of core features.
+- **Analysis**: Gap analysis, comparisons, and session summaries.
+- **Interview**: Project summaries and ML roadmaps for interview prep.
+- **UI**: Visual guides and Tailwind configurations.
+- **Setup**: Quickstart guides and deployment instructions.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## Live Application
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Frontend:
+https://prompt-craft-z.vercel.app/
+
+---
+
+## Design Notes
+
+- The current analysis engine uses **rule-based NLP techniques**
+- This approach was chosen for **explainability and transparency**
+- The architecture allows future integration of transformer-based models without breaking the API
+
+---
+
+## Future Improvements
+
+- Add structured prompt scoring
+- Store prompt history using a database
+- Introduce user authentication
+- Integrate transformer-based semantic analysis
+- Add caching, monitoring, and rate limiting
+
+---
+
+## License
+
+This project is intended for educational and portfolio purposes.
+
+---

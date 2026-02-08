@@ -14,7 +14,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -31,10 +30,6 @@ export default function Home() {
   const loadHistoryItem = useCallback((item) => {
     setPrompt(item.prompt);
     setResult(item.result);
-    // Close sidebar on mobile when item is selected
-    if (window.innerWidth < 768) {
-      setIsSidebarOpen(false);
-    }
   }, []);
 
   const deleteHistoryItem = useCallback((id) => {
@@ -80,47 +75,21 @@ export default function Home() {
     setPrompt("");
     setResult(null);
     setError(null);
-    if (window.innerWidth < 768) {
-      setIsSidebarOpen(false);
-    }
   };
 
   return (
-    <div className="min-h-screen bg-beige-50 dark:bg-midnight-900 text-gray-900 dark:text-white overflow-hidden selection:bg-warm-blue selection:text-white dark:selection:bg-neon-blue transition-colors duration-300 flex relative">
-
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
+    <div className="min-h-screen bg-beige-50 dark:bg-midnight-900 text-gray-900 dark:text-white overflow-hidden selection:bg-warm-blue selection:text-white dark:selection:bg-neon-blue transition-colors duration-300 flex">
       {/* Left Sidebar - History */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-beige-100 dark:bg-midnight-800 border-r border-beige-300 dark:border-white/10 
-        flex-shrink-0 overflow-hidden flex flex-col transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0
-      `}>
-        <div className="p-4 flex items-center justify-between">
+      <aside className="w-64 bg-beige-100 dark:bg-midnight-800 border-r border-beige-300 dark:border-white/10 flex-shrink-0 overflow-hidden flex flex-col">
+        <div className="p-4">
           <button
             onClick={resetPrompt}
-            className="flex-1 px-4 py-3 bg-beige-50 dark:bg-midnight-900 hover:bg-white dark:hover:bg-midnight-700 rounded-lg border border-beige-300 dark:border-white/10 text-left font-medium text-gray-900 dark:text-white transition-all flex items-center gap-2"
+            className="w-full px-4 py-3 bg-beige-50 dark:bg-midnight-900 hover:bg-white dark:hover:bg-midnight-700 rounded-lg border border-beige-300 dark:border-white/10 text-left font-medium text-gray-900 dark:text-white transition-all flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
             New Prompt
-          </button>
-
-          {/* Close Sidebar Button (Mobile) */}
-          <button
-            onClick={() => setIsSidebarOpen(false)}
-            className="md:hidden ml-2 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
           </button>
         </div>
 
@@ -166,7 +135,7 @@ export default function Home() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden relative w-full">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Background Effects */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-warm-blue/10 dark:bg-neon-blue/20 rounded-full blur-3xl animate-blob"></div>
@@ -174,22 +143,9 @@ export default function Home() {
           <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-warm-pink/10 dark:bg-neon-pink/20 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 overflow-y-auto flex-1 w-full">
-          {/* Mobile Menu Toggle */}
-          <div className="absolute top-4 left-4 md:hidden z-30">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 rounded-lg bg-white/50 dark:bg-black/20 hover:bg-white/80 dark:hover:bg-black/40 border border-gray-200 dark:border-white/10 backdrop-blur-sm transition-all text-gray-700 dark:text-gray-200"
-              aria-label="Open menu"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
-
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 overflow-y-auto flex-1 w-full">
           {/* Theme Toggle Button */}
-          <div className="absolute top-4 right-4 md:top-8 md:right-8 z-30">
+          <div className="absolute top-8 right-8">
             <button
               onClick={toggleTheme}
               className="p-3 rounded-full bg-gray-800/10 dark:bg-white/10 hover:bg-gray-800/20 dark:hover:bg-white/20 border border-gray-800/20 dark:border-white/10 backdrop-blur-sm transition-all duration-300 group"
@@ -212,7 +168,7 @@ export default function Home() {
             <div className="inline-block mb-4 px-4 py-1.5 rounded-full border border-gray-800/20 dark:border-white/10 bg-gray-800/5 dark:bg-white/5 backdrop-blur-sm">
               <span className="text-sm font-medium text-amber-700 dark:text-amber-500">✨ AI-Powered Prompt Engineering</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+            <h1 className="text-6xl md:text-7xl font-bold mb-6 tracking-tight">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600 dark:from-white dark:via-gray-200 dark:to-gray-400">
                 AI Prompt
               </span>
@@ -220,7 +176,7 @@ export default function Home() {
                 Studio
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
               Transform simple ideas into professional, high-performance prompts for Coding, Art, and Writing.
             </p>
           </div>
@@ -236,7 +192,7 @@ export default function Home() {
           />
 
           {/* Features Section */}
-          <div className="mt-16 md:mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
                 icon: "🚀",
@@ -254,7 +210,7 @@ export default function Home() {
                 desc: "Optimized for LLMs like GPT, Claude, and Gemini."
               }
             ].map((feature, idx) => (
-              <div key={idx} className="group p-6 md:p-8 rounded-2xl bg-beige-200/50 dark:bg-white/5 border border-beige-300 dark:border-white/10 hover:bg-beige-200/70 dark:hover:bg-white/10 transition duration-300 backdrop-blur-sm">
+              <div key={idx} className="group p-8 rounded-2xl bg-beige-200/50 dark:bg-white/5 border border-beige-300 dark:border-white/10 hover:bg-beige-200/70 dark:hover:bg-white/10 transition duration-300 backdrop-blur-sm">
                 <div className="text-4xl mb-4 group-hover:scale-110 transition duration-300">{feature.icon}</div>
                 <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{feature.title}</h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">

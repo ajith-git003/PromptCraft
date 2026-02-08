@@ -17,13 +17,13 @@ export default function PromptInput({
       {/* Input Section */}
       <div className="relative group mb-12">
         <div className="absolute -inset-1 bg-gradient-to-r from-warm-blue via-warm-purple to-warm-pink dark:from-neon-blue dark:via-neon-purple dark:to-neon-pink rounded-xl blur opacity-15 dark:opacity-25 group-hover:opacity-40 dark:group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-        <div className="relative bg-beige-100 dark:bg-midnight-800 rounded-xl p-4 md:p-6 ring-1 ring-beige-300 dark:ring-white/10">
+        <div className="relative bg-beige-100 dark:bg-midnight-800 rounded-xl p-6 ring-1 ring-beige-300 dark:ring-white/10">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Enter your basic idea
           </label>
           <div className="relative">
             <textarea
-              className="w-full bg-white/60 dark:bg-midnight-900/50 text-gray-900 dark:text-white p-3 md:p-4 rounded-lg border border-beige-300 dark:border-gray-700 focus:border-warm-blue dark:focus:border-neon-blue focus:ring-1 focus:ring-warm-blue dark:focus:ring-neon-blue transition-all resize-none placeholder-gray-400 dark:placeholder-gray-500"
+              className="w-full bg-white/60 dark:bg-midnight-900/50 text-gray-900 dark:text-white p-4 rounded-lg border border-beige-300 dark:border-gray-700 focus:border-warm-blue dark:focus:border-neon-blue focus:ring-1 focus:ring-warm-blue dark:focus:ring-neon-blue transition-all resize-none placeholder-gray-400 dark:placeholder-gray-500"
               rows="3"
               placeholder="e.g., A cyberpunk city in rain... (Press Enter to submit, Ctrl+Enter for new line)"
               value={prompt}
@@ -92,7 +92,7 @@ export default function PromptInput({
           {/* Left Column: Original & Suggestions */}
           <div className="lg:col-span-4 space-y-6">
             {/* Original */}
-            <div className="bg-beige-200/60 dark:bg-midnight-800/50 rounded-xl p-4 md:p-6 border border-beige-300 dark:border-white/5">
+            <div className="bg-beige-200/60 dark:bg-midnight-800/50 rounded-xl p-6 border border-beige-300 dark:border-white/5">
               <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium uppercase tracking-wider mb-4">
                 Original
               </h3>
@@ -108,7 +108,7 @@ export default function PromptInput({
 
             {/* Suggestions */}
             {result.suggestions && (
-              <div className="bg-beige-200/60 dark:bg-midnight-800/50 rounded-xl p-4 md:p-6 border border-beige-300 dark:border-white/5">
+              <div className="bg-beige-200/60 dark:bg-midnight-800/50 rounded-xl p-6 border border-beige-300 dark:border-white/5">
                 <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium uppercase tracking-wider mb-4">
                   Suggestions
                 </h3>
@@ -133,14 +133,14 @@ export default function PromptInput({
           <div className="lg:col-span-8">
             <div className="relative group h-full">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-warm-purple to-warm-pink dark:from-neon-purple dark:to-neon-pink rounded-xl blur opacity-10 dark:opacity-20 group-hover:opacity-25 dark:group-hover:opacity-40 transition duration-500"></div>
-              <div className="relative bg-beige-100 dark:bg-midnight-800 rounded-xl p-6 md:p-8 border border-beige-300 dark:border-white/10 h-full">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4 md:gap-0">
-                  <h3 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-warm-purple to-warm-pink dark:from-neon-purple dark:to-neon-pink">
+              <div className="relative bg-beige-100 dark:bg-midnight-800 rounded-xl p-8 border border-beige-300 dark:border-white/10 h-full">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-warm-purple to-warm-pink dark:from-neon-purple dark:to-neon-pink">
                     ✨ Enhanced Prompt
                   </h3>
                   <button
                     onClick={() => copyToClipboard(result.enhanced_prompt)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-beige-200 dark:bg-white/5 hover:bg-beige-300 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-all border border-beige-300 dark:border-white/5 self-end md:self-auto"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-beige-200 dark:bg-white/5 hover:bg-beige-300 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-all border border-beige-300 dark:border-white/5"
                   >
                     <svg
                       className="w-4 h-4"
