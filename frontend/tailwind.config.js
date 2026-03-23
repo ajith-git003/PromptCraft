@@ -50,5 +50,12 @@ module.exports = {
       }
     },
   },
+  safelist: [
+    'translate-x-0',
+    '-translate-x-full',
+    'md:translate-x-0',
+    'fixed',
+    'md:static',
+  ],
   plugins: [],
 }
